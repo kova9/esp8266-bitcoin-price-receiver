@@ -2,14 +2,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include <ESP8266HTTPClient.h>
-
-char ssid[] = "Stanko_A1";
-char password[] = "12111998";
-
-char key[] = "F11A11C0-603E-DB38-CDA0-9C5F46BAA1A9";
-char url[] = "https://rest.coinapi.io/v1/exchangerate/BTC/USD?apikey=F11A11C0-603E-DB38-CDA0-9C5F46BAA1A9";
-
-char localServer[] = "https://btc-esp8266-1dd205c5725f.herokuapp.com/"; 
+#include "config.h"
 
 double lastPrice = -1;
 int currentID = 0;
@@ -42,13 +35,11 @@ void getLatestBTCPrice() {
   WiFiClientSecure client;
   HTTPClient http; 
   client.setInsecure();
-  Serial.print("Connecting to ");
-  Serial.println("btc-esp8266-1dd205c5725f.herokuapp.com");
-
+  
   int count = 0;
   int httpCode = 0;
   while(count < 5 && httpCode != HTTP_CODE_OK){
-    http.begin(client, "https://btc-esp8266-1dd205c5725f.herokuapp.com/bitcoin/latest");
+    http.begin(client, endpointLatest);
     httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK) {
@@ -140,7 +131,7 @@ void postBTCPrice(int id, double price) {
   
     String priceStr = String(price, 2);
 
-    String url = "https://btc-esp8266-1dd205c5725f.herokuapp.com/bitcoin";
+    // String url = "https://btc-esp8266-1dd205c5725f.herokuapp.com/bitcoin";
 
     DynamicJsonDocument doc(1024);
     doc["id"] = id;
@@ -149,11 +140,11 @@ void postBTCPrice(int id, double price) {
     String payload;
     serializeJson(doc, payload);  
 
-    http.begin(client, url);
+    http.begin(client, endpointPOST);
     http.addHeader("Content-Type", "application/json");
 
     Serial.print("Posting data to ");
-    Serial.println(url);
+    Serial.println(endpointPOST);
 
     int httpCode = http.POST(payload); 
 
