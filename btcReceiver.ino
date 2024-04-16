@@ -131,8 +131,6 @@ void postBTCPrice(int id, double price) {
   
     String priceStr = String(price, 2);
 
-    // String url = "https://btc-esp8266-1dd205c5725f.herokuapp.com/bitcoin";
-
     DynamicJsonDocument doc(1024);
     doc["id"] = id;
     doc["price"] = priceStr;  
