@@ -73,54 +73,33 @@ void getLatestBTCPrice() {
 
 double getBTCPrice() {
   WiFiClientSecure client;
+  HTTPClient http; 
   client.setInsecure();
-  int retryCount = 0;
-  if (!client.connect("rest.coinapi.io", 443) && retryCount < 5) {
-    Serial.println("Connection to rest.coinapi.io failed");
-    delay(2000); // Wait for 2 seconds before retrying
-    retryCount++;
-    if (retryCount > 5){
-      return -1;
-    }
-  }
- 
-  client.println("GET /v1/exchangerate/BTC/USD?apikey=" + String(key) + " HTTP/1.1");
-  client.println("Host: rest.coinapi.io");
-  client.println("Connection: close");
-  client.println();
+  float rate;
+  int httpCode = 0;
+  int count = 0;
+  while(count < 5 && httpCode != HTTP_CODE_OK){
+    http.begin(client, url);
+    httpCode = http.GET();
 
-  while (!client.available()) {
-    delay(100);
-  }
+    if (httpCode == HTTP_CODE_OK) {
+      String payload = http.getString();
+      Serial.println(payload);
 
-  boolean jsonStartFound = false;
-  String response = "";
-  char c;
-  while (client.available()) {
-    c = client.read();
-    if (!jsonStartFound) {
-      if (c == '{') { 
-        jsonStartFound = true;
-        response += c;
-      }
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, payload);
+
+      rate = doc["rate"];
+
+      Serial.print("Price: ");
+      Serial.println(rate, 2);
     } else {
-      response += c;
-      if (c == '}') { 
-        break; 
-      }
+      Serial.printf("[HTTP] GET BTC API PRICE... failed, error: %s\n", http.errorToString(httpCode).c_str());
     }
+
+    count++;
   }
-
-  client.stop();
-
-  if (!jsonStartFound) {
-    Serial.println("Failed to find the JSON start in response.");
-  }
-
-  DynamicJsonDocument doc(1024);
-  deserializeJson(doc, response);
-  float rate = doc["rate"];
-
+  http.end();
   return rate;
 }
 
